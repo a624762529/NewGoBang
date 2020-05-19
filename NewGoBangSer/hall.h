@@ -65,6 +65,11 @@ public:
         m_fd_to_id.erase(fd);
     }
 
+    void removeFromMapIdToHome(int id)
+    {
+        m_id_to_home.erase(id);
+    }
+
     bool addPeople(int fd)
     {
         auto ret=find(m_waitque.begin(),m_waitque.end(),fd);
@@ -97,7 +102,7 @@ public:
             m_fd_to_id.insert(pair<int,Id>(fd1,ret.second));
             m_fd_to_id.insert(pair<int,Id>(fd2,ret.second));
 
-            m_id_to_fd.insert(pair<int,Home>(ret.second,home));
+            m_id_to_home.insert(pair<int,Home>(ret.second,home));
             retv.home=home;
             retv.id=ret.second;
             retv.is_success=true;
@@ -107,9 +112,9 @@ public:
         return retv;
     }
 
-    Home    findHome(int id)
+    Home&   findHome(int id)
     {
-        auto ret=m_id_to_fd.find(id);
+        auto ret=m_id_to_home.find(id);
         return (*ret).second;
     }
 
@@ -139,7 +144,7 @@ public:
 
 private:
     vector<int>  m_waitque;
-    map<Id,Home> m_id_to_fd;
+    map<Id,Home> m_id_to_home;
     map<int,Id>  m_fd_to_id;
     int arry[100]{0};
 };

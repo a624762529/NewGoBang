@@ -50,6 +50,7 @@ public:
     void           sendSuccess();
     void           giveUpWaiting();
     void           sendTimeOut();
+    bool           getIsMeCanUse();
 public:
     Chessboard     m_chessboard;
     vector<Node>   m_player_act;

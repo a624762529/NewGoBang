@@ -221,6 +221,11 @@ void NetworkGame::changeIsMeCanNotUse()
     m_isme=false;
 }
 
+bool NetworkGame::getIsMeCanUse()
+{
+    return m_isme;
+}
+
 void NetworkGame::clearn()
 {
     m_chessboard.clear();

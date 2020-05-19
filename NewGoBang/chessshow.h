@@ -31,6 +31,7 @@ public:
     void            timerEvent(QTimerEvent *);
 public:
     void            setNetWork(shared_ptr<SockClient> cli);
+    void            closeEvent( QCloseEvent * e );
 private slots:
     void            on_pushButton_ai_first_clicked();
     void            on_pushButton_aibehind_clicked();
@@ -75,6 +76,9 @@ private:
     QString         m_black_chess;
     QString         m_player_chess;
     QString         m_other_chess;
+
+    int             m_time_id;
+    bool            m_settimeid;
 };
 
 #endif // CHESSSHOW_H

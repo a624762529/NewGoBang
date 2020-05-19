@@ -5,7 +5,9 @@
 #include"hall.h"
 #include"sockarry.h"
 #include<iostream>
+#include<map>
 using namespace std;
+
 
 class Explain
 {
@@ -19,9 +21,13 @@ public:
         FristRead     =8,SecondRead   =16,
         ChangeNothing =32
     };
+    enum {Writing,Reading,Freedom};
 public:
-    void dealPlayerGameOver(int fd);
 
+    void dealPlayerGameOver(int fd);
+    void dealPlayerInGameLeft(int fd);
+    void dealPlayerLeftWithOutRetBackHome(int fd);
+    std::map<int,int> map_fd_to_stata;
 };
 
 

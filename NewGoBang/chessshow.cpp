@@ -12,7 +12,9 @@ ChessShow::ChessShow(QWidget *parent) :
     ui->widget_NetWar->hide();
     startNetModel();
     m_loop_tag=true;
-    this->startTimer(1000);
+
+    m_time_id=this->startTimer(1000);
+    m_settimeid=true;
 
     m_write_chess="./chessnode/white.bmp";
     m_black_chess="./chessnode/black.bmp";
@@ -192,6 +194,8 @@ void ChessShow::paintEvent(QPaintEvent *event)
                      perLen/2,perLen/2,
                      QPixmap("./chessnode/tag.png"));
     }
+
+
 
     ui->lcdNumber->display(m_time_out);
     p.end();
@@ -455,7 +459,7 @@ void ChessShow::timerEvent(QTimerEvent *)
 {
     if(m_game_type==ChessShow::NetWar&&m_timestart==true)
     {
-        if(m_time_out==0)
+        if(m_time_out<=0)
         {
             std::cout<<"超时"<<endl;
             netgame.sendTimeOut();
@@ -473,4 +477,22 @@ void ChessShow::timerEvent(QTimerEvent *)
         }
         update();
     }
+}
+
+void ChessShow::closeEvent( QCloseEvent * e )
+{
+
+
+    if( QMessageBox::question(this,
+                              tr("Quit"),
+                              tr("Are you sure to quit this application?"),
+                              QMessageBox::Yes, QMessageBox::No )
+            == QMessageBox::Yes)
+    {
+        e->accept();//不会将事件传递给组件的父组件
+        qDebug()<<"ok";
+    }
+    else
+        e->ignore();
+
 }

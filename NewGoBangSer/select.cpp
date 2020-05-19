@@ -54,7 +54,7 @@ void Select::loop()
         if(ret == -1)
         {
             perror("select error");
-            exit(1);
+            //exit(1);
         }
         // 客户端发起了新的连接
         if(FD_ISSET(lfd, &t_read))
@@ -109,7 +109,7 @@ int Select::acceptCallBack()
     if(cfd == -1)
     {
         perror("accept error");
-        exit(1);
+        //exit(1);
     }
     char ip[64];
     printf("new client IP: %s, Port: %d\n",
@@ -164,7 +164,7 @@ void Select::readCallBack(int cfd)
     if(len == -1)
     {
         perror("recv error");
-        exit(1);
+        //exit(1);
     }
     else if(len == 0)
     {
@@ -337,13 +337,35 @@ void Select::dealExplain(char *info,int cfd)
 void Select::dealPlayerStopGame(int cfd)
 {
     SendChessMan *chess     =new SendChessMan;
+
     //获取当前信息中的节点值  并且作为另一个节点的输入
     chess->setPoint(-1,-1);
+    //玩家没有在网络游戏中就返回
     int homeid=hall.findId(cfd);
     if(homeid!=-1)
     {
-        Home ret_home= hall.findHome(homeid);
-        int type=0;
+        Home &ret_home= hall.findHome(homeid);
+        if(ret_home.getPerFd(cfd)==-1)
+        {
+            m_explain.dealPlayerGameOver(cfd);
+            delete chess;
+            return;
+        }
+        if(m_explain.map_fd_to_stata[ret_home.getPerFd(cfd)]
+                ==Explain::Writing)
+        {
+             if(ret_home.cfd1==cfd)
+             {
+                 ret_home.cfd1=-1;
+             }
+             else if(ret_home.cfd2==cfd)
+             {
+                 ret_home.cfd2=-1;
+             }
+             m_explain.dealPlayerInGameLeft(cfd);
+             delete chess;
+             return;
+        }
         if(ret_home.cfd1==cfd)
         {
             changeFdWrite(ret_home.cfd2);
