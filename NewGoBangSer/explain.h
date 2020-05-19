@@ -19,6 +19,10 @@ public:
         FristRead     =8,SecondRead   =16,
         ChangeNothing =32
     };
+public:
+    void dealPlayerGameOver(int fd);
+
 };
+
 
 #endif // EXPLAIN_H

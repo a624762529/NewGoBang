@@ -91,6 +91,11 @@ pair<bool,int> NetworkGame::theOtherSideStep()
     Node chessman=recvChess();
     pair<bool,int> ret;
     ret.first=false;
+    if(chessman.x==-1&&chessman.y==-1)
+    {
+        ret.second=NetworkGame::TimeOut;
+        return ret;
+    }
     if(!m_chessboard.playChess(chessman.x,chessman.y,-1))
     {
         throw bad_alloc();
@@ -235,4 +240,11 @@ void NetworkGame::giveUpWaiting()
     //放弃等待
     GiveUpWating giveup;
     client->writeInfo(reinterpret_cast<char*>(&giveup),sizeof(GiveUpWating));
+}
+
+void NetworkGame::sendTimeOut()
+{
+    //发送超时
+    TimeOutSend timeout;
+    client->writeInfo(reinterpret_cast<char*>(&timeout),sizeof(TimeOutSend));
 }

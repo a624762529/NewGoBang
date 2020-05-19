@@ -27,16 +27,15 @@ public:
     Sem_Pv(int val);
     ~Sem_Pv();
     void set_CanUse();
-    void sem_P();      //put 在信号量中存放元素
-    void sem_Try_P();  //非阻塞往信号量中存入元素
-    void sem_V();      //get 在信号量中取出元素
-    bool sem_Try_V();  //非阻塞往信号量中取出元素
+    void sem_P();                 //put 在信号量中存放元素
+    void sem_Try_P();             //非阻塞往信号量中存入元素
+    void sem_V();                 //get 在信号量中取出元素
+    bool sem_Try_V();             //非阻塞往信号量中取出元素
     void set_Val(int val);
 private:
     int magic;                    //设置信号量是否可用
     atomic<int> waiting_num;      //等待的线程数目
-
-    atomic<int> free_qua; //当前的信号量中 有几个可用资源
+    atomic<int> free_qua;         //当前的信号量中 有几个可用资源
     mutex mu;
     condition_variable con;
 

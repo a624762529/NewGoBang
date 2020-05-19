@@ -81,13 +81,13 @@ public:
     Point point;
 };
 
-class TimeOut:public SendPackImpl
+class TimeOutSend:public SendPackImpl
 {
 public:
-    TimeOut():
+    TimeOutSend():
         SendPackImpl(SendPackImpl::timeOut)
     {
-        m_info_len=sizeof(TimeOut);
+        m_info_len=sizeof(TimeOutSend);
     }
 };
 

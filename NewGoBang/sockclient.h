@@ -20,18 +20,14 @@ public:
     void  destory();
     int   connectToHost();
     int   stableRecv(char *buf,int len);
-
 private:
-
     int  createSocket(string ip,int prot);
     void setNoBlock();
     void setBlock();
     int connectToSer();//非阻塞connect
-
 public:
     void startAlarm();
     void start();
-
 private:
     bool m_starAlarm;
     int cfd;

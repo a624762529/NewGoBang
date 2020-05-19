@@ -121,3 +121,8 @@ void TwoPeopleGame::regretGame()
         m_second_act.pop_back();
     }
 }
+
+TwoPeopleGame:: ~TwoPeopleGame()
+{
+    this->clear();
+}

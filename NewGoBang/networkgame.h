@@ -26,21 +26,22 @@ public:
     int x;
     int y;
 };
+
 class NetworkGame
 {
 public:
     NetworkGame();
-    void clear();
-    int findTeam();
-    int  addStep(Node chessnode);
-    void setNet(shared_ptr<SockClient> cli);
-    bool getYouAreFrist();
+    void           clear();
+    int            findTeam();
+    int            addStep(Node chessnode);
+    void           setNet(shared_ptr<SockClient> cli);
+    bool           getYouAreFrist();
     pair<bool,int> theOtherSideStep();
-    void addChess(int x,int y);
-    Node getChessFromTube();
-    void clearn();
+    void           addChess(int x,int y);
+    Node           getChessFromTube();
+    void           clearn();
 public:
-    void play();
+    void           play();
     pair<bool,int> playerStep(Node chessman);
     void           sendChess(Node chessman);
     Node           recvChess();
@@ -48,12 +49,13 @@ public:
     void           changeIsMeCanNotUse();
     void           sendSuccess();
     void           giveUpWaiting();
+    void           sendTimeOut();
 public:
     Chessboard     m_chessboard;
     vector<Node>   m_player_act;
     vector<Node>   m_otherside_act;
     enum
-    { YouselfWin=7,TheOtherSideWin=8,FailFindHome=9};
+    { YouselfWin=7,TheOtherSideWin=8,FailFindHome=9,TimeOut=10};
 private:
     bool                   jude_frist=true;
     bool                   issetclient=false;

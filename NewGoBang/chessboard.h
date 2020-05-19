@@ -35,6 +35,7 @@ class Chessboard
 {
 public:
     Chessboard();
+    ~Chessboard();
     void           printfChessboard();
     pair<int,int>  getHorizontalTagQua(int x,int y,int tag);
     pair<int,int>  getVerticalTagQua  (int x,int y,int tag);
@@ -50,9 +51,9 @@ private:
     bool           jude_y_ill(int y);
     int            getStata(bool behind,bool front);
 public:
-    static bool judeLegal(Node node);
-	static int  getPointStata(int x, int y);
-    void        clear();
+    static bool    judeLegal(Node node);
+    static int     getPointStata(int x, int y);
+    void           clear();
 public:
 	static int m_chessboard[MaxX][MaxY];
     enum{huo,chong,si};

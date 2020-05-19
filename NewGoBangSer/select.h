@@ -41,6 +41,10 @@ private:
 private:
     //处理explain返回的内容
     void dealExplain(char *info, int cfd);
+    void dealPlayerGameOver(int fd);
+    void dealPlayerLeftSer(int fd);
+
+    void dealPlayerStopGame(int cfd);
 private:
     atomic<int>         num;
     HeartAlarm          m_alarm;

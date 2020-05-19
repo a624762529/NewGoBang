@@ -10,6 +10,7 @@ class TwoPeopleGame
 {
 public:
     TwoPeopleGame();
+    ~TwoPeopleGame();
     pair<bool,int> addStep(Node chessman);
     void clear();
     void regretGame();

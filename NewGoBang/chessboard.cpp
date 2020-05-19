@@ -20,7 +20,7 @@ bool Chessboard::playChess(int x,int y,int tag)
 
     if(x>=0&&x<MaxY&&
        y>=0&&y<MaxX&&
-       m_chessboard[y][x]==0)
+            m_chessboard[y][x]==0)
     {
         m_chessboard[y][x]=tag;
         return true;
@@ -31,6 +31,11 @@ bool Chessboard::playChess(int x,int y,int tag)
 void Chessboard::clearChess()
 {
      memset(m_chessboard,0,sizeof(m_chessboard));
+}
+
+Chessboard::~Chessboard()
+{
+    clear();
 }
 
 void Chessboard::printfChessboard()

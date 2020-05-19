@@ -27,5 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
+    client->~SockClient();
     delete ui;
+    exit(0);
 }

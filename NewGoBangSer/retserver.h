@@ -16,7 +16,7 @@ public:
     }
 public:
     enum
-    {youFrist,youSecond,fail,sendChessMan,endWaiting};
+    {youFrist,youSecond,fail,sendChessMan,endWaiting,timeOut};
     //你是先手    你是后手   成功    失败  获取到对方的落子点
     int  m_len=0; //信息长度
     int  m_num=0; //数据的数目
@@ -63,7 +63,8 @@ public:
     Fail():BackHead(BackHead::fail)
     {
         this->m_len=sizeof(Fail);
-    }};
+    }
+};
 //获取到
 class SendChessMan:public BackHead
 {
@@ -78,5 +79,14 @@ public:
         point.y=y;
     }
     Point point;
+};
+
+class RetTimeOut:public BackHead
+{
+public:
+    RetTimeOut():BackHead(BackHead::timeOut)
+    {
+        this->m_len=sizeof(RetTimeOut);
+    }
 };
 #endif // RETSENDBACK_H

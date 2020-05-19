@@ -2,7 +2,8 @@
 #include "ui_chessshow.h"
 #include <QMessageBox>
 ChessShow::ChessShow(QWidget *parent) :
-    QWidget(parent),
+    QWidget(parent),m_create_find_team_thread(false),
+    m_time_out(30),m_timestart(false),
     ui(new Ui::ChessShow)
 {
     ui->setupUi(this);
@@ -10,10 +11,25 @@ ChessShow::ChessShow(QWidget *parent) :
     ui->widget_select->hide();
     ui->widget_NetWar->hide();
     startNetModel();
+    m_loop_tag=true;
+    this->startTimer(1000);
+
+    m_write_chess="./chessnode/white.bmp";
+    m_black_chess="./chessnode/black.bmp";
 }
 
 ChessShow::~ChessShow()
 {
+    m_loop_tag=false;
+    path.clear();
+    perLen=0;
+    aigame.~AiPlayGame();
+    twgame.clear();
+    netgame.clear();
+    m_create_find_team_thread=false;
+    m_loop_tag=false;
+    m_time_out=-1;
+    m_timestart=false;
     delete ui;
 }
 
@@ -31,7 +47,6 @@ void ChessShow::mousePressEvent(QMouseEvent *e)
     if(m_game_type==ChessShow::AiWar)
     {
          aimodel(chessman);
-
     }
     else if(m_game_type==ChessShow::TwoPeopleWar)
     {
@@ -150,7 +165,7 @@ void ChessShow::paintEvent(QPaintEvent *event)
     {
         p.drawPixmap(node.x*perLen-perLen/2 ,node.y*perLen-perLen/2,
                      perLen,perLen,
-                     QPixmap("./chessnode/black.bmp"));
+                     QPixmap(m_other_chess));
 
     }
 
@@ -158,7 +173,7 @@ void ChessShow::paintEvent(QPaintEvent *event)
     {
         p.drawPixmap(node.x*perLen-perLen/2 ,node.y*perLen-perLen/2,
                      perLen,perLen,
-                     QPixmap("./chessnode/white.bmp"));
+                     QPixmap(m_player_chess));
     }
 
     //标记末尾标签
@@ -177,6 +192,8 @@ void ChessShow::paintEvent(QPaintEvent *event)
                      perLen/2,perLen/2,
                      QPixmap("./chessnode/tag.png"));
     }
+
+    ui->lcdNumber->display(m_time_out);
     p.end();
 }
 
@@ -220,6 +237,8 @@ void ChessShow::on_pushButton_ai_first_clicked()
 {
     //ai先行
     m_game_type=ChessShow::AiWar;
+    m_player_chess=m_write_chess;
+    m_other_chess=m_black_chess;
     aigame.clear();
     aigame.aiStep();
     ui->widget_select->hide();
@@ -229,6 +248,8 @@ void ChessShow::on_pushButton_ai_first_clicked()
 void ChessShow::on_pushButton_aibehind_clicked()
 {
     m_game_type=ChessShow::AiWar;
+    m_player_chess=m_black_chess;
+    m_other_chess=m_write_chess;
     aigame.clear();
     ui->widget_select->hide();
     update();
@@ -237,6 +258,7 @@ void ChessShow::on_pushButton_aibehind_clicked()
 void ChessShow::on_pushButton_2_clicked()
 {
     ui->widget_select->show();
+    aigame.clear();
 }
 
 void ChessShow::on_pushButton_clicked()
@@ -244,11 +266,12 @@ void ChessShow::on_pushButton_clicked()
     twgame.clear();
     m_game_type=ChessShow::TwoPeopleWar;
 
+    m_player_chess=m_write_chess;
+    m_other_chess=m_black_chess;
 }
 
 void ChessShow::on_pushButton_3_clicked()
 {
-    m_game_type=ChessShow::NetWar;
     ui->widget_NetWar->show();
 }
 
@@ -257,36 +280,83 @@ void ChessShow::on_pushButton_geiveup_clicked()
     netgame.giveUpWaiting();
 }
 
+void ChessShow::stopTimeOut()
+{
+    m_time_out=30;
+    m_timestart=false;
+}
+
+void ChessShow::startTimeOut()
+{
+    m_time_out=30;
+    m_timestart=true;
+}
+
+void ChessShow::dealNetGameOver()
+{
+    m_game_type=-1;
+    netgame.clearn();
+    stopTimeOut();
+    update();
+}
+
 void ChessShow::on_pushButton_findteam_clicked()
 {
     //查找失败  那就..
-
+    netgame.clear();
+    netgame.clearn();
     auto lanb=[=](){
     int ret=netgame.findTeam();
     if(ret==NetworkGame::FailFindHome)
     {
-        cout<<"寻找失败"<<endl;
+        m_create_find_team_thread=false;
         return;
     }
     ui->widget_NetWar->hide();
     if(netgame.getYouAreFrist())
     {
+
+        m_player_chess=m_write_chess;
+        m_other_chess =m_black_chess;
         cout<<"you are frist"<<endl;
+        startTimeOut();
+        m_game_type=ChessShow::NetWar;
         netgame.changeIsMeCanUse();
+        m_create_find_team_thread=false;
         return;
     }
     else
     {
+        cout<<"you are second"<<endl;
+        m_player_chess=m_black_chess;
+        m_other_chess=m_write_chess;
+        m_game_type=ChessShow::NetWar;
+        stopTimeOut();
         netgame.changeIsMeCanNotUse();
-        netgame.theOtherSideStep();
+        pair<bool,int> ret=netgame.theOtherSideStep();
+        startTimeOut();
         netgame.changeIsMeCanUse();
         update();
-        cout<<"you are second"<<endl;
+        m_create_find_team_thread=false;
+
+        if(ret.second==NetworkGame::TimeOut)
+        {
+            QMessageBox::information(NULL, "对端超时", "youwin",
+                                     QMessageBox::Yes |
+                                     QMessageBox::No,
+                                     QMessageBox::Yes);
+            stopTimeOut();
+            m_game_type=-1;
+        }
         return;
     }
     };
-    std::thread th(lanb);
-    th.detach();
+    if(m_create_find_team_thread==false)
+    {
+        m_create_find_team_thread=true;
+        std::thread th(lanb);
+        th.detach();
+    }
 }
 
 void ChessShow::setNetWork(shared_ptr<SockClient> cli)
@@ -302,7 +372,7 @@ void ChessShow::startNetModel()
 
 void ChessShow::startNetLoop()
 {
-    while (true)
+    while (m_loop_tag)
     {
         Node chessman=netgame.getChessFromTube();
         auto ret=netgame.playerStep(chessman);
@@ -310,6 +380,7 @@ void ChessShow::startNetLoop()
 
         if(ret.first)
         {
+            stopTimeOut();
             netgame.changeIsMeCanNotUse();
             if(ret.second==NetworkGame::YouselfWin)
             {
@@ -318,23 +389,27 @@ void ChessShow::startNetLoop()
                                          QMessageBox::Yes |
                                          QMessageBox::No,
                                          QMessageBox::Yes);
-                m_game_type=-1;
-                netgame.clearn();
-                netgame.sendSuccess();
+                dealNetGameOver();
             }
             else
             {
                 auto ret=netgame.theOtherSideStep();
                 netgame.changeIsMeCanUse();
+                startTimeOut();
                 if(ret.second==NetworkGame::TheOtherSideWin)
                 {
                     QMessageBox::information(NULL, "fail", "you fail",
+                                             QMessageBox::Yes |QMessageBox::No,
+                                             QMessageBox::Yes);
+                    dealNetGameOver();
+                }
+                else if(ret.second==NetworkGame::TimeOut)
+                {
+                    QMessageBox::information(NULL, "对端超时", "youwin",
                                              QMessageBox::Yes |
                                              QMessageBox::No,
                                              QMessageBox::Yes);
-                    m_game_type=-1;
-                    netgame.clearn();
-                    netgame.sendSuccess();
+                    dealNetGameOver();
                 }
             }
             update();
@@ -374,4 +449,28 @@ void ChessShow::on_pushButton_7_clicked()
 void ChessShow::on_pushButton_8_clicked()
 {
     ui->widget_select->hide();
+}
+
+void ChessShow::timerEvent(QTimerEvent *)
+{
+    if(m_game_type==ChessShow::NetWar&&m_timestart==true)
+    {
+        if(m_time_out==0)
+        {
+            std::cout<<"超时"<<endl;
+            netgame.sendTimeOut();
+            //执行stop网络游戏
+            dealNetGameOver();
+            QMessageBox::information(NULL, "你已经超时", "youfail",
+                                     QMessageBox::Yes |
+                                     QMessageBox::No,
+                                     QMessageBox::Yes);
+        }
+        else
+        {
+            m_time_out--;
+            cout<<m_time_out<<endl;
+        }
+        update();
+    }
 }

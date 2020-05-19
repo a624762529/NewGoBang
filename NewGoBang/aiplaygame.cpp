@@ -359,3 +359,15 @@ void AiPlayGame::regretGame()
         m_aiact.pop_back();
     }
 }
+
+AiPlayGame::~AiPlayGame()
+{
+    m_attack.clear();    //攻击点位
+    m_defent.clear();    //防御点位
+    m_playact.clear(); //玩家点位
+    m_aiact.clear();   //ai的点位
+    m_chessboard.clear();
+    ai_frist=false;
+    now_ai  =false;
+    now_me=false;
+}

@@ -47,7 +47,6 @@ HEADERS += \
     sockclient.h \
     head.h \
     server.h \
-    sockarry.h \
     retserver.h \
     Tube.h \
     sem_pv.h

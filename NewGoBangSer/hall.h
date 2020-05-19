@@ -7,7 +7,6 @@
 #include<algorithm>
 using namespace std;
 
-
 class Home
 {
 public:
@@ -60,14 +59,21 @@ public:
         arry[id]=0;
     }
 
-    void removeFdFromRever(int fd)
+    void removeFromMapFdToId(int fd)
     {
-        m_rever.erase(fd);
+        //移除fd对应的房间号
+        m_fd_to_id.erase(fd);
     }
 
-    void addPeople(int fd)
+    bool addPeople(int fd)
     {
-        m_waitque.push_back(fd);
+        auto ret=find(m_waitque.begin(),m_waitque.end(),fd);
+        if(ret==m_waitque.end())
+        {
+            m_waitque.push_back(fd);
+            return true;
+        }
+        return false;
     }
 
     RetBack addHome()
@@ -88,10 +94,10 @@ public:
             home.cfd1=fd1;
             home.cfd2=fd2;
 
-            m_rever.insert(pair<int,Id>(fd1,ret.second));
-            m_rever.insert(pair<int,Id>(fd2,ret.second));
+            m_fd_to_id.insert(pair<int,Id>(fd1,ret.second));
+            m_fd_to_id.insert(pair<int,Id>(fd2,ret.second));
 
-            m_mp.insert(pair<int,Home>(ret.second,home));
+            m_id_to_fd.insert(pair<int,Home>(ret.second,home));
             retv.home=home;
             retv.id=ret.second;
             retv.is_success=true;
@@ -101,30 +107,40 @@ public:
         return retv;
     }
 
-    Home findHome(int id)
+    Home    findHome(int id)
     {
-        auto ret=m_mp.find(id);
+        auto ret=m_id_to_fd.find(id);
         return (*ret).second;
     }
 
-    Id  findId(int cfd)
+    Id      findId(int cfd)
     {
-        auto ret=m_rever.find(cfd);
-        return ret->second;
+        auto ret=m_fd_to_id.find(cfd);
+        if(ret!=m_fd_to_id.end())
+        {
+            return ret->second;
+        }
+        else
+        {
+            return -1;
+        }
     }
 
-    void removeFromWaitQue(int cfd)
+    bool    removeFromWaitQue(int cfd)
     {
         auto ret=find(m_waitque.begin(),m_waitque.end(),cfd);
         if(ret!=m_waitque.end())
         {
             m_waitque.erase(ret);
+            return true;
         }
+        return false;
     }
+
 private:
     vector<int>  m_waitque;
-    map<Id,Home> m_mp;
-    map<int,Id>  m_rever;
+    map<Id,Home> m_id_to_fd;
+    map<int,Id>  m_fd_to_id;
     int arry[100]{0};
 };
 

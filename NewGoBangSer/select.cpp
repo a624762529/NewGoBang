@@ -169,6 +169,7 @@ void Select::readCallBack(int cfd)
     else if(len == 0)
     {
         cout<<"client close connect_:"<<cfd<<endl;
+        dealPlayerStopGame(cfd);
         removeFd(cfd);
     }
     else
@@ -331,4 +332,31 @@ void Select::dealExplain(char *info,int cfd)
     {
         return;
     }
+}
+
+void Select::dealPlayerStopGame(int cfd)
+{
+    SendChessMan *chess     =new SendChessMan;
+    //获取当前信息中的节点值  并且作为另一个节点的输入
+    chess->setPoint(-1,-1);
+    int homeid=hall.findId(cfd);
+    if(homeid!=-1)
+    {
+        Home ret_home= hall.findHome(homeid);
+        int type=0;
+        if(ret_home.cfd1==cfd)
+        {
+            changeFdWrite(ret_home.cfd2);
+        }
+        else
+        {
+            changeFdWrite(ret_home.cfd1);
+        }
+        int per_fd=ret_home.getPerFd(cfd);
+        auto retv=mp.find(per_fd);
+        retv->second=SockArry(chess,0);
+        m_explain.dealPlayerGameOver(ret_home.cfd1);
+        m_explain.dealPlayerGameOver(ret_home.cfd2);
+    }
+    return ;
 }
