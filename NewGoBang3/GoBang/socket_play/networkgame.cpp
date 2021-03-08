@@ -47,7 +47,7 @@ void NetworkGame::setNet(shared_ptr<SockClient> cli)
     }
     else
     {
-        QMessageBox::about(NULL,"title","重复设置　network game socket");
+        cout<<"重复设置　network game socket"<<endl;
         throw bad_alloc();
     }
 }
@@ -86,7 +86,7 @@ NetGameStatus NetworkGame::getChessFromSel(int x,int y)
     m_my_turn=false;
     sendChess(x,y);
     m_player_act.push_back(Node(x,y));
-    return Ok;
+    return NetGameStatus::Ok;
 }
 
 void NetworkGame::sendChess(int x, int y)
@@ -146,4 +146,45 @@ void NetworkGame::WonSelf()
     document.setObject(json);
     QByteArray bytearray = document.toJson(QJsonDocument::Compact);
     client->writeQString(bytearray);
+}
+
+
+void analysis(QString msg)
+{
+    QJsonParseError json_error;
+    QJsonDocument parse_doucment = QJsonDocument::fromJson(msg.toStdString().data(), &json_error);
+
+    if(json_error.error == QJsonParseError::NoError)
+    {
+        if(parse_doucment.isObject())
+        {
+            QJsonObject obj = parse_doucment.object();
+            if(obj.contains("info"))
+            {
+                QJsonValue name_value = obj.take("info");
+                if(name_value.isString())
+                {
+                     QString str = QString::fromLocal8Bit(name_value.toString().
+                                                          toLocal8Bit().data());
+                    qDebug()<<"-----"<<str;
+                }
+            }
+        }
+    }
+}
+
+
+void NetworkGame::sendTalkingInfo(QString info)
+{
+    qDebug()<<info;
+    QJsonObject json;
+    json.insert("type",QString("TalkToPeer"));
+    json.insert("info",info);
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    client->writeQString(bytearray);
+
+    analysis(bytearray);
+    qDebug()<<"+++++++++"<<bytearray;
 }

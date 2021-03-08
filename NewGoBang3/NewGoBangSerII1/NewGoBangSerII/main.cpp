@@ -8,12 +8,14 @@
 #include<QString>
 using namespace std;
 
+
 Explain explain;
 void readCallBack(char* arry,int len,void *arg,TcpCommunication *tcpCon)
 {
     if(len>0)
     {
-        explain.dispatchServer(arry,tcpCon);
+        QByteArray arryv(arry);
+        explain.dispatchServer(arryv,tcpCon);
     }
     else if(len==0)
     {
@@ -42,8 +44,8 @@ int main()
     loop.setAcceptcb(acceptCallBack);
     loop.setCanUse();
 
-//    loop.initHeartTime(2);
-//    loop.startAlarm();
+    loop.initHeartTime(10);
+    loop.startAlarm();
     loop.loop();
     return 1;
 }

@@ -78,7 +78,7 @@ void ClientArg::clientDisconnect(TcpCommunication* tcpCon, void *hallv)
         QJsonDocument document;
         document.setObject(json);
         QByteArray bytearray = document.toJson(QJsonDocument::Compact);
-        per->writeQString(bytearray);
+        per->appendQString(bytearray);
         per->changeStatus(TcpCommunication::Status::Write);
 
         per->setReadArg(nullptr);

@@ -1,9 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
 #include <QJsonDocument>
 #include <QJsonObject>
 #define Port 8888
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
             break;
         }
     }
+    client->start();
     startReadLoop();
-
     chess.setNetWork(client);
     chess.show();
 }
@@ -33,12 +33,10 @@ MainWindow::~MainWindow()
 {
     client->~SockClient();
     delete ui;
-    exit(0);
 }
 
 void MainWindow::readLoopDispatch()
 {
-   cout<<"-----------------------loop"<<endl;
     while (true)
     {
         int len=0;
@@ -78,14 +76,22 @@ void MainWindow::readLoopDispatch()
             {
                 emit chess.signal_PerLeft();
             }
+            else if(type=="TalkToPeer")
+            {
+                cout<<"gettalking"<<mem<<endl;
+                chess.slot_GetTalkToPeer(mem);
+            }
+            else if(type=="Pong")
+            {
+                 cout<<"getPong"<<mem<<endl;
+            }
             free(mem);
         }
     }
 }
 
-QString  MainWindow::getType(QString info)
+QByteArray  MainWindow::getType(QByteArray bytearray)
 {
-    QByteArray bytearray=info.toLatin1();
     QJsonParseError jsonError;
     QJsonDocument paserDoc = QJsonDocument::fromJson(bytearray,&jsonError);
     if (jsonError.error == QJsonParseError::NoError)
@@ -93,7 +99,7 @@ QString  MainWindow::getType(QString info)
         QJsonObject paserObj = paserDoc.object();
         if (paserObj.contains("type"))
         {
-            return paserObj["type"].toString();;
+            return paserObj["type"].toString().toStdString().c_str();
         }
     }
     return "";

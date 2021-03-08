@@ -1,11 +1,10 @@
 #ifndef NETWORKGAME_H
 #define NETWORKGAME_H
-#include"../chessbord/chessboard.h"
-#include<QMessageBox>
-#include<set>
-#include<vector>
-#include<iostream>
-#include"../socket/sockclient.h"
+#include "../chessbord/chessboard.h"
+#include <set>
+#include <vector>
+#include <iostream>
+#include "../socket/sockclient.h"
 
 using namespace std;
 enum NetGameStatus
@@ -30,6 +29,7 @@ public:
     void           sendChess      (int x,int y);
     void           timeOut        ();
     void           WonSelf        ();
+    void           sendTalkingInfo(QString);
 public:
     Chessboard     m_chessboard;
     vector<Node>   m_player_act;

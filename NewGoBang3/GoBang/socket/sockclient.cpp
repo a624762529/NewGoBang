@@ -1,9 +1,7 @@
 #include "sockclient.h"
-
-#include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QString>
-
-
 SockClient::SockClient(string ip,int prot)
 {
     bzero(&addr,sizeof(addr));
@@ -138,11 +136,10 @@ int SockClient::writeInfo(char *buf, int len)
 
 void  SockClient::writeQString(QString qstr)
 {
+    lock_guard<mutex> lock(mu);
     int info_len=qstr.toStdString().size();
     writeInfo((char*)&info_len,4);
-    QMessageBox::about(NULL,"writeQStringvvvvvvvvv",(char*)qstr.toStdString().c_str());
-    cout<<(char*)qstr.toStdString().c_str()<<endl;
-    writeInfo((char*)qstr.toStdString().c_str(),qstr.size());
+    writeInfo((char*)qstr.toStdString().c_str(),qstr.toStdString().size());
 }
 
 void SockClient::destory()
@@ -195,11 +192,8 @@ void SockClient::startAlarm()
     signal(SIGPIPE,SIG_IGN);
     while (m_starAlarm)
     {
-        {
-            lock_guard<mutex> lock(mu);
-            send(cfd,"a",1,MSG_OOB);
-        }
-        sleep(60);
+        sendPing();
+        sleep(3);
     }
 }
 
@@ -213,6 +207,7 @@ void SockClient::start()
 {
     if(m_starAlarm==false)
     {
+
         m_starAlarm=true;
         thread th(&SockClient::startAlarm,this);
         th.detach();
@@ -240,3 +235,12 @@ int  SockClient::stableRecv(char *buf,int len)
     }
 }
 
+void  SockClient::sendPing()
+{
+    QJsonObject json;
+    json.insert("type",QString("Ping"));
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    writeQString(bytearray);
+}

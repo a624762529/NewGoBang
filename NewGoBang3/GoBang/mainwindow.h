@@ -16,7 +16,7 @@ public:
     explicit     MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void         readLoopDispatch();
-    QString      getType(QString info);
+    QByteArray getType(QByteArray info);
     void         startReadLoop();
 private:
     ChessShow               chess;

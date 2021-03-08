@@ -7,7 +7,7 @@
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-
+CONFIG += c++11
 TARGET = GoBang
 TEMPLATE = app
 
@@ -32,7 +32,8 @@ SOURCES += \
     socket/sockclient.cpp \
     socket_play/networkgame.cpp \
     two_people_play/twopeoplegame.cpp \
-    chessshow.cpp
+    chessshow.cpp \
+    talkwindow.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -44,8 +45,10 @@ HEADERS += \
     two_people_play/twopeoplegame.h \
     chessshow.h \
     head.h \
-    mainwindow.h
+    mainwindow.h \
+    talkwindow.h
 
 FORMS += \
         mainwindow.ui \
-    chessshow.ui
+    chessshow.ui \
+    talkwindow.ui

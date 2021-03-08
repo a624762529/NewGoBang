@@ -31,6 +31,7 @@ public:
     int   createSocket (string ip,int prot);
     void  setNoBlock   ();
     void  setBlock     ();
+    void  sendPing     ();
 private:
     int connectToSer();//非阻塞connect
 public:

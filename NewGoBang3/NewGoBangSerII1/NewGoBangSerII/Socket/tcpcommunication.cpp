@@ -223,7 +223,7 @@ void TcpCommunication::closeCommunication()
 
 TcpCommunication::~TcpCommunication()
 {
-
+    closeCommunication();
 }
 
 int  TcpCommunication::readHeadLen()
@@ -270,6 +270,7 @@ void TcpCommunication::doWriteOver()
         delete []m_write_buf;
         m_write_buf=nullptr;
     }
+    m_have_set_write_len=false;
     m_ready_write_len=0;
     m_max_write_len=4;
 }
@@ -290,6 +291,44 @@ void TcpCommunication::setInfoLen(int len)
     memset(m_write_buf,0,len+4);
     InfoPack *p=reinterpret_cast<InfoPack *>(m_write_buf);
     p->len=len;
+}
+
+void TcpCommunication::appendQString(QString info)
+{
+    if(m_have_set_write_len==false)
+    {
+        //第一次写入
+        writeQString(info);
+    }
+    else
+    {
+        //初始化空闲内存
+        int new_buf_len=m_max_write_len + 4 + info.size();
+        char *buf=new char[new_buf_len+4];
+        memset(buf,0,new_buf_len+4);
+
+        //拷贝原有的数据
+        memcpy(buf,m_write_buf,m_max_write_len);
+
+        //追加后来的数据
+        int info_len=info.size();
+        memcpy(&buf[m_max_write_len],&info_len,4);
+        memcpy(&buf[m_max_write_len+4],info.toStdString().c_str(),info_len);
+
+        free(m_write_buf);
+        m_write_buf=buf;
+        m_max_write_len=new_buf_len;
+        printfWriteBuf();
+    }
+}
+
+void TcpCommunication::printfWriteBuf()
+{
+    for(int i=0;i<m_max_write_len;i++)
+    {
+        cout<<m_write_buf[i]<<" ";
+    }
+    cout<<endl;
 }
 
 int TcpCommunication::getStatus()
@@ -328,3 +367,4 @@ char* TcpCommunication::getWriteBuf()
 {
     return m_write_buf;
 }
+

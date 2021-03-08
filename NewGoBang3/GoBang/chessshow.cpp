@@ -1,11 +1,12 @@
 #include "chessshow.h"
 #include "ui_chessshow.h"
-
+#include<QThread>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QString>
 ChessShow::ChessShow(QWidget *parent) :
     QWidget(parent),
-    m_time_out(30),
+    m_time_out(60),
     m_timestart(false),
     ui(new Ui::ChessShow)
 {
@@ -13,21 +14,32 @@ ChessShow::ChessShow(QWidget *parent) :
     this->resize(800,800);
     ui->widget_select->hide();
     ui->widget_NetWar->hide();
-
     m_time_id=this->startTimer(1000);
-    m_settimeid=true;
+    qDebug() << "chess构造弹出县城ids" <<QThread::currentThreadId();
 
+    m_settimeid=true;
     m_write_chess ="./chessnode/white.bmp";
     m_black_chess ="./chessnode/black.bmp";
     m_front_ground="./background/2.jpg";
     m_back_ground ="./background/1.jpg";
 
-    connect(this,&ChessShow::signal_First,     [=](){slot_First();});
-    connect(this,&ChessShow::signal_Second,    [=](){slot_Second();});
-    connect(this,&ChessShow::signal_GetChess,  [=](QString info){slot_GetChess(info);});
-    connect(this,&ChessShow::signal_PerTimeOut,[=](){slot_PerTimeOut();});
-    connect(this,&ChessShow::signal_PerLeft,   [=](){slot_PerLeft();});
-    connect(this,&ChessShow::signal_PerWon,    [=](){slot_PerWon();});
+    connect(this,&ChessShow::signal_First,     this, &ChessShow::slot_First  );
+    connect(this,&ChessShow::signal_Second,    this, &ChessShow::slot_Second);
+    connect(this,&ChessShow::signal_GetChess,  this, &ChessShow::slot_GetChess);
+    connect(this,&ChessShow::signal_PerTimeOut,this, &ChessShow::slot_PerTimeOut);
+    connect(this,&ChessShow::signal_PerLeft,   this, &ChessShow::slot_PerLeft);
+    connect(this,&ChessShow::signal_PerWon,    this, &ChessShow::slot_PerWon );
+    connect(this,&ChessShow::signal_StopGame,  this, &ChessShow::slot_GameOver);
+
+    connect(&m_window,&TalkWindow::sendInfo,   [=](QString info)
+    {
+        //if(m_game_type==NetWar)
+        {
+            netgame.sendTalkingInfo(info);
+        }
+    });
+
+
 }
 
 
@@ -39,7 +51,12 @@ void ChessShow::slot_First()
     m_other_chess =m_black_chess;
     cout<<"you are frist"<<endl;
     m_game_type=ChessShow::NetWar;
+
+    QPixmap myPix("./chessnode/black.bmp");
+    ui->label_node->setPixmap(myPix);
+    ui->label_node->setScaledContents(true);
     netgame.setFirstHand();
+    m_window.show();
 }
 
 void ChessShow::slot_Second()
@@ -48,7 +65,13 @@ void ChessShow::slot_Second()
     m_player_chess=m_black_chess;
     m_other_chess=m_write_chess;
     m_game_type=ChessShow::NetWar;
+
+    QPixmap myPix("./chessnode/white.bmp");
+    ui->label_node->setPixmap(myPix);
+    ui->label_node->setScaledContents(true);
     netgame.setSecondHand();
+
+    m_window.show();
 }
 
 void ChessShow::slot_GetChess(QString info)
@@ -58,28 +81,38 @@ void ChessShow::slot_GetChess(QString info)
     startTimeOut();
 }
 
+void ChessShow::slot_GameOver()
+{
+    static QPixmap myPix("./chessnode/tag.png");
+    ui->label_node->setPixmap(myPix);
+    ui->label_node->setScaledContents(true);
+    m_window.hide();
+    QMessageBox::about(nullptr,"gameover", "gameover");
+}
+
 void ChessShow::slot_PerWon()
 {
-    QMessageBox::about(nullptr,"perWon","对方赢了");
-    netgame.gameOver();
-    update();
-    stopTimeOut();
+    emit signal_StopGame("perWon","对方赢了");
+    gameOver();
 }
 
 void ChessShow::slot_PerTimeOut()
 {
-    QMessageBox::about(nullptr,"pertimeout","对方超时");
-    netgame.gameOver();
-    update();
-    stopTimeOut();
+    emit signal_StopGame("pertimeout","对方超时");
+    gameOver();
 }
 
 void ChessShow::slot_PerLeft()
 {
-    QMessageBox::about(nullptr,"perleft","你赢了");
+    emit signal_StopGame("perleft","你赢了");
+    gameOver();
+}
+
+void ChessShow::gameOver()
+{
     netgame.gameOver();
-    update();
     stopTimeOut();
+    update();
 }
 
 ChessShow::~ChessShow()
@@ -108,7 +141,7 @@ void ChessShow::mousePressEvent(QMouseEvent *e)
     Node chessman(x_show,y_show);
     if(m_game_type==ChessShow::AiWar)
     {
-         aimodel(chessman);
+        aimodel(chessman);
     }
     else if(m_game_type==ChessShow::TwoPeopleWar)
     {
@@ -117,13 +150,38 @@ void ChessShow::mousePressEvent(QMouseEvent *e)
     else if(m_game_type==ChessShow::NetWar)
     {
         netmodel(chessman);
+        stopTimeOut();
     }
     update();
 }
 
 void ChessShow::netmodel(Node chessman)
 {
-    netgame.getChessFromSel(chessman.x,chessman.y);
+    switch(netgame.getChessFromSel(chessman.x,chessman.y))
+    {
+    case NetGameStatus::PointErr:
+    {
+        ui->label_info->setText(QString("落子不合法"));
+        update();
+        break;
+    }
+    case NetGameStatus::YouSuccess:
+    {
+        ui->label_info->setText(QString("won"));
+        emit ui->pushButton_SelfWon->click();
+        break;
+    }
+    case NetGameStatus::Ok:
+    {
+        ui->label_info->setText(QString("落子成功"));
+        break;
+    }
+    case NetGameStatus::NotTurn:
+    {
+        ui->label_info->setText(QString("还没轮到你呢，请等待对端"));
+        break;
+    }
+    }
 }
 
 pair<bool,int> ChessShow::double_model(Node chessman)
@@ -132,19 +190,15 @@ pair<bool,int> ChessShow::double_model(Node chessman)
     if(ret.second==TwoPeopleGame::FristSuccess)
     {
         update();
-        QMessageBox::information(NULL, "fail", "先手赢了",
-                                 QMessageBox::Yes |
-                                 QMessageBox::No,
-                                 QMessageBox::Yes);
+        QMessageBox::about(nullptr,"fail","先手赢了");
         m_game_type=-1;
+
+
     }
     else if(ret.second==TwoPeopleGame::SecondSuccess)
     {
         update();
-        QMessageBox::information(NULL, "info", "后手赢了",
-                                 QMessageBox::Yes |
-                                 QMessageBox::No,
-                                 QMessageBox::Yes);
+        QMessageBox::about(nullptr,"info","后手赢了");
         m_game_type=-1;
     }
     return ret;
@@ -170,9 +224,7 @@ void ChessShow::initImage()
     QImage* img=new QImage;
     if(! ( img->load(path) ) ) //加载图像
     {
-        QMessageBox::information(this,
-                                 tr("打开图像失败"),
-                                 tr("打开图像失败!"));
+        QMessageBox::information(nullptr,"打开图像失败","打开图像失败");
         delete img;
         return;
     }
@@ -182,13 +234,14 @@ void ChessShow::initImage()
 
 void ChessShow::paintEvent(QPaintEvent *event)
 {
-    QPainter p;
-    p.begin(this);
+    QPainter               p(this);
+    QPen                   pen;
+
     int chessWidth=width()-100;
     int chessHeigth=height()-100;
     p.drawPixmap(0,0,width(),height(),QPixmap(m_front_ground));
     p.drawPixmap(0,0,chessWidth,chessHeigth,QPixmap(m_back_ground));
-    QPen pen;
+
     pen.setWidth(2);
     pen.setColor(Qt::black);
     p.setPen(pen);
@@ -267,10 +320,7 @@ bool ChessShow::aimodel(Node chessman)
         {
             //玩家赢了 打扫战场
             update();
-            QMessageBox::information(NULL, "win", "ai失败",
-                                     QMessageBox::Yes |
-                                     QMessageBox::No,
-                                     QMessageBox::Yes);
+            QMessageBox::information(nullptr,"win","ai失败");
             m_game_type=-1;
         }
         else
@@ -279,10 +329,7 @@ bool ChessShow::aimodel(Node chessman)
             update();
             if(ret.second==AiPlayGame::AiSuccess)
             {
-                QMessageBox::information(NULL, "fail", "人类一败涂地",
-                                         QMessageBox::Yes |
-                                         QMessageBox::No,
-                                         QMessageBox::Yes);
+                QMessageBox::information(nullptr,"fail","人类一败涂地");
                 m_game_type=-1;
             }
         }
@@ -351,7 +398,7 @@ void ChessShow::setNetWork(shared_ptr<SockClient> cli)
 
 void ChessShow::on_pushButton_6_clicked()
 {
-   ui->widget_NetWar->hide();
+    ui->widget_NetWar->hide();
 }
 
 void ChessShow::on_pushButton_7_clicked()
@@ -383,34 +430,17 @@ void ChessShow::closeEvent(QCloseEvent * e)
     {
         e->accept();//不会将事件传递给组件的父组件
         qDebug()<<"ok";
+        m_window.close();
     }
     else
         e->ignore();
 
 }
 
-void ChessShow::on_pushButton_10_clicked()
+void ChessShow::resizeEvent(QResizeEvent *event)
 {
-    QString fileName = QFileDialog::getOpenFileName(
-            this,
-            tr("open a file."),
-            "./chessnode",
-            tr("images(*.png *jpeg *bmp *jpg);"
-               ";video files(*.avi *.mp4 *.wmv);;All files(*.*)"));
-
-    if(fileName.size()==0)
-    {
-        QMessageBox::information(
-                                 NULL,  "error",
-                                 "文件选择错误",
-                                 QMessageBox::Yes | QMessageBox::No,
-                                 QMessageBox::Yes
-                    );
-        return;
-    }
-
-    this->m_black_chess=fileName;
-    update();
+    int max_hw=max(event->size().height(),event->size().width());
+    resize(max_hw,max_hw);
 }
 
 //放弃寻找
@@ -426,30 +456,29 @@ void ChessShow::on_pushButton_5_clicked()
 //超时
 void ChessShow::on_pushButton_TimeOut_clicked()
 {
-    netgame.gameOver();
-    QMessageBox::about(nullptr,"you timeout!!!","您输了");
+    gameOver();
+    //QMessageBox::information(nullptr,"you timeout!!!","您输了");
+    emit signal_StopGame("you timeout!!!","您输了");
     netgame.timeOut();
-    update();
 }
 
 //赢了
 void ChessShow::on_pushButton_SelfWon_clicked()
 {
-    netgame.gameOver();
-    QMessageBox::about(nullptr,"you won!!!","您赢了");
+    gameOver();
+    emit signal_StopGame("you won!!!","您赢了");
     netgame.WonSelf();
-    update();
 }
 
 void ChessShow::stopTimeOut()
 {
-    m_time_out=30;
+    m_time_out=60;
     m_timestart=false;
 }
 
 void ChessShow::startTimeOut()
 {
-    m_time_out=30;
+    m_time_out=60;
     m_timestart=true;
 }
 
@@ -460,12 +489,33 @@ void ChessShow::timerEvent(QTimerEvent *)
         if(m_time_out<=0)
         {
             emit ui->pushButton_TimeOut->click();
+            stopTimeOut();
         }
         else
         {
             m_time_out--;
-            cout<<m_time_out<<endl;
         }
         update();
     }
+}
+
+void ChessShow::slot_GetTalkToPeer(QByteArray bytearray)
+{
+    QJsonParseError jsonError;
+    QJsonDocument paserDoc = QJsonDocument::fromJson(bytearray,&jsonError);
+    qDebug()<<__LINE__<<"   "<<__FUNCTION__<<paserDoc.object()["info"].
+              toString();
+
+
+    if (jsonError.error == QJsonParseError::NoError)
+    {
+        QJsonObject paserObj = paserDoc.object();
+        m_window.getChessFromPeer(paserObj["info"].toString());
+    }
+}
+
+
+void ChessShow::on_pushButton_9_clicked()
+{
+    m_window.show();
 }

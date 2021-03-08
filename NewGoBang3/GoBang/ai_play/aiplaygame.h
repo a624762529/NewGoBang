@@ -1,11 +1,11 @@
 #ifndef AIPLAYGAME_H
 #define AIPLAYGAME_H
-#include<vector>
-#include"../chessbord/chessboard.h"
+#include <vector>
+#include <iostream>
+#include <atomic>
 
-#include"record.h"
-#include<iostream>
-#include<atomic>
+#include "../chessbord/chessboard.h"
+#include "record.h"
 using namespace std;
 #define PLAYACT 1
 #define AIACT  -1

@@ -11,13 +11,15 @@
 #include<QDebug>
 #include <thread>
 
+#include "talkwindow.h"
 #include "./socket_play/networkgame.h"
 #include "./ai_play/aiplaygame.h"
 #include "./two_people_play/twopeoplegame.h"
 
 
 using namespace std;
-namespace Ui {
+namespace Ui
+{
 class ChessShow;
 }
 
@@ -29,42 +31,23 @@ public:
     ~ChessShow();
     void            mousePressEvent(QMouseEvent *e);
     void            paintEvent     (QPaintEvent *event);
-    void            timerEvent(QTimerEvent *);
+    void            timerEvent     (QTimerEvent *);
 public:
     void            setNetWork     (shared_ptr<SockClient> cli);
     void            closeEvent     (QCloseEvent * e );
+    void            resizeEvent    (QResizeEvent *event);
 private slots:
     void            on_pushButton_ai_first_clicked();
     void            on_pushButton_aibehind_clicked();
     void            on_pushButton_2_clicked();
     void            on_pushButton_clicked();
     void            on_pushButton_3_clicked();
-    void            on_pushButton_geiveup_clicked();
     void            on_pushButton_findteam_clicked();
     void            on_pushButton_5_clicked();
     void            on_pushButton_6_clicked();
     void            on_pushButton_7_clicked();
     void            on_pushButton_8_clicked();
     void            on_pushButton_9_clicked();
-    void            on_pushButton_11_clicked();
-    void            on_pushButton_set_back_ground_clicked();
-    void            on_pushButton_setprebackground_clicked();
-    void            on_pushButton_10_clicked();
-    void            on_pushButton_12_clicked();
-    void            on_pushButton_18_clicked();
-    void            on_pushButton_24_clicked();
-    void            on_pushButton_36_clicked();
-    void            on_pushButton_31_clicked();
-    void            on_pushButton_32_clicked();
-    void            on_pushButton_33_clicked();
-    void            on_pushButton_34_clicked();
-    void            on_pushButton_35_clicked();
-    void            on_pushButton_38_clicked();
-    void            on_pushButton_39_clicked();
-    void            on_pushButton_40_clicked();
-    void            on_pushButton_41_clicked();
-    void            on_pushButton_42_clicked();
-    void            on_pushButton_37_clicked();
     void            on_pushButton_TimeOut_clicked();
     void            on_pushButton_SelfWon_clicked();
 signals:
@@ -74,6 +57,8 @@ signals:
     void            signal_PerTimeOut();                  //对端超时
     void            signal_PerLeft();                     //对端离开
     void            signal_PerWon();                      //对端赢了
+    void            signal_MessageBox(QString title,QString info);
+    void            signal_StopGame(QString title,QString info);
 public:
     void            slot_First();
     void            slot_Second();
@@ -81,14 +66,17 @@ public:
     void            slot_PerTimeOut();
     void            slot_PerLeft();
     void            slot_PerWon();
+    void            slot_GameOver();
+    void            slot_GetTalkToPeer(QByteArray info);
 private:
+    void            gameOver();
     void            initImage    ();
     int             around       (int val);
 private:
     bool            aimodel     (Node chessman);
     void            netmodel    (Node chessman);
     pair<bool,int>  double_model(Node chessman);
-private:
+
     void            stopTimeOut  ();
     void            startTimeOut ();
 private:
@@ -99,6 +87,7 @@ private:
     AiPlayGame             aigame;
     TwoPeopleGame          twgame;
     NetworkGame            netgame;
+    TalkWindow             m_window;
     enum                   {TwoPeopleWar,AiWar,NetWar};
     atomic<bool>           m_loop_tag;
     atomic<int>            m_time_out;    //超时时间　数字表的显示计数
@@ -112,6 +101,7 @@ private:
     int                    m_time_id;
     bool                   m_settimeid;
     shared_ptr<SockClient> m_cli;
+
 };
 
 #endif // CHESSSHOW_H
