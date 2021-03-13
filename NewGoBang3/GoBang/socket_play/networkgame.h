@@ -24,12 +24,17 @@ public:
     void           setFirstHand   ();                           //设置先手
     void           setSecondHand  ();                           //设置后手
 public:
-    void           findTeam       ();
+    int            findTeam();
     void           sendSuccess    ();
     void           sendChess      (int x,int y);
     void           timeOut        ();
     void           WonSelf        ();
     void           sendTalkingInfo(QString);
+    int            sendUndo        ();
+    void           undo            ();
+    void           disUndo         ();
+    void           sendUndoAgree   ();
+    void           sendUndoDisAgree();
 public:
     Chessboard     m_chessboard;
     vector<Node>   m_player_act;
@@ -41,6 +46,7 @@ public:
     bool                   m_self_first;          //判断自己是否是先手
     bool                   m_my_turn=false;       //轮到我了
     bool                   m_send_find_home;      //是否发送了寻找房间的信息了
+    bool                   m_send_undo=false;
 };
 
 #endif // NETWORKGAME_H

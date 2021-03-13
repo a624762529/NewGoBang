@@ -15,15 +15,28 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    epollloop.cpp \
-    tcplisten.cpp \
-    tcpcommunication.cpp \
-    test.cpp \
-    heartalarm.cpp
+        main.cpp \
+    business/explain.cpp \
+    business/hall.cpp \
+    business/server.cpp \
+    log/logpferi.cpp \
+    log/sem_pv.cpp \
+    log/Tube.cpp \
+    socket/heartalarm.cpp \
+    socket/select.cpp \
+    socket/tcplisten.cpp
+
 
 HEADERS += \
-    epollloop.h \
     head.h \
-    tcplisten.h \
-    tcpcommunication.h \
-    heartalarm.h
+    business/explain.h \
+    business/hall.h \
+    business/retserver.h \
+    business/server.h \
+    log/logpferi.h \
+    log/sem_pv.h \
+    log/Tube.h \
+    socket/heartalarm.h \
+    socket/select.h \
+    socket/sockarry.h \
+    socket/tcplisten.h

@@ -85,6 +85,27 @@ void MainWindow::readLoopDispatch()
             {
                  cout<<"getPong"<<mem<<endl;
             }
+            else if(type=="PeerRequestUndo")
+            {
+                //对端申请悔棋
+                emit chess.signal_PeerRequestUndo();
+            }
+            else if(type=="UndoAgree")
+            {
+                emit chess.signal_PeerAgreeUndo();
+            }
+            else if(type=="PeerDisagreeUndo")
+            {
+                emit chess.signal_PeerDisagreeUndo();
+            }
+            else if(type=="RefuseFindHouseSuccess")
+            {
+                emit chess.signal_RefuseFindHomeSuccess();
+            }
+            else if(type=="RefuseFindHouseFail")
+            {
+                emit chess.signal_RefuseFindHomeFail();
+            }
             free(mem);
         }
     }

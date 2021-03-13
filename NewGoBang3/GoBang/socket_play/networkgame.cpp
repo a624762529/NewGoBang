@@ -18,14 +18,20 @@ void NetworkGame::gameOver()
     m_send_find_home=false;
 }
 
-void NetworkGame::findTeam()
+int NetworkGame::findTeam()
 {
+    if(m_send_find_home == true)
+    {
+        return -1;
+    }
     QJsonObject json;
     json.insert("type",QString("FindHome"));
     QJsonDocument document;
     document.setObject(json);
     QByteArray bytearray = document.toJson(QJsonDocument::Compact);
     client->writeQString(bytearray);
+    m_send_find_home = true;
+    return 1;
 }
 
 void NetworkGame::sendSuccess()
@@ -176,7 +182,6 @@ void analysis(QString msg)
 
 void NetworkGame::sendTalkingInfo(QString info)
 {
-    qDebug()<<info;
     QJsonObject json;
     json.insert("type",QString("TalkToPeer"));
     json.insert("info",info);
@@ -184,7 +189,64 @@ void NetworkGame::sendTalkingInfo(QString info)
     document.setObject(json);
     QByteArray bytearray = document.toJson(QJsonDocument::Compact);
     client->writeQString(bytearray);
+}
 
-    analysis(bytearray);
-    qDebug()<<"+++++++++"<<bytearray;
+void NetworkGame::undo()
+{
+    m_chessboard.m_chessboard[m_player_act.back().y][m_player_act.back().x]=0;
+    m_chessboard.m_chessboard[m_otherside_act.back().y][m_otherside_act.back().x]=0;
+    m_player_act.pop_back();
+    m_otherside_act.pop_back();
+    m_send_undo=false;
+}
+
+void NetworkGame::disUndo()
+{
+    m_send_undo=false;
+}
+
+int NetworkGame::sendUndo()
+{
+    if(m_my_turn==false)
+    {
+        return -1;
+    }
+
+    if(m_send_undo==true)
+    {
+        return 0;
+    }
+
+    if(m_player_act.size()<=1)
+    {
+        return 2;
+    }
+    QJsonObject json;
+    json.insert("type",QString("Undo"));
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    client->writeQString(bytearray);
+    m_send_undo=true;
+    return 1;
+}
+
+void NetworkGame::sendUndoAgree()
+{
+    QJsonObject json;
+    json.insert("type",QString("UndoAgree"));
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    client->writeQString(bytearray);
+}
+
+void NetworkGame::sendUndoDisAgree()
+{
+    QJsonObject json;
+    json.insert("type",QString("UndoDisagree"));
+    QJsonDocument document;
+    document.setObject(json);
+    QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    client->writeQString(bytearray);
 }

@@ -8,6 +8,7 @@ TalkWindow::TalkWindow(QWidget *parent) :
     ui(new Ui::TalkWindow)
 {
     ui->setupUi(this);
+    setWindowFlags(Qt::WindowCloseButtonHint);
 }
 
 TalkWindow::~TalkWindow()

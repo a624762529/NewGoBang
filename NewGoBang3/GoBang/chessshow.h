@@ -59,6 +59,11 @@ signals:
     void            signal_PerWon();                      //对端赢了
     void            signal_MessageBox(QString title,QString info);
     void            signal_StopGame(QString title,QString info);
+    void            signal_PeerAgreeUndo();
+    void            signal_PeerDisagreeUndo();
+    void            signal_PeerRequestUndo();
+    void            signal_RefuseFindHomeSuccess();
+    void            signal_RefuseFindHomeFail();
 public:
     void            slot_First();
     void            slot_Second();
@@ -68,6 +73,11 @@ public:
     void            slot_PerWon();
     void            slot_GameOver();
     void            slot_GetTalkToPeer(QByteArray info);
+    void            slot_PeerAgreeUndo();
+    void            slot_PeerDisagreeUndo();
+    void            slot_PeerRequestUndo();
+    void            slot_RefuseFindHomeSuccess();
+    void            slot_RefuseFindHomeFail();
 private:
     void            gameOver();
     void            initImage    ();
@@ -79,6 +89,8 @@ private:
 
     void            stopTimeOut  ();
     void            startTimeOut ();
+    void            justStartTime();
+    void            justStopTime();
 private:
     int                    m_game_type=-1;
     Ui::ChessShow         *ui;

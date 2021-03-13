@@ -11,7 +11,7 @@ using namespace std;
 #define MaxY 20
 //val = 0 说明该点没有棋子（空位置）
 //val =-1 说明该点是白子
-//val = 1  说明该点是黑子
+//val = 1 说明该点是黑子
 
 class Node
 {

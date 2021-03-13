@@ -11,6 +11,7 @@ ChessShow::ChessShow(QWidget *parent) :
     ui(new Ui::ChessShow)
 {
     ui->setupUi(this);
+    setWindowFlags(Qt::WindowCloseButtonHint);
     this->resize(800,800);
     ui->widget_select->hide();
     ui->widget_NetWar->hide();
@@ -23,17 +24,22 @@ ChessShow::ChessShow(QWidget *parent) :
     m_front_ground="./background/2.jpg";
     m_back_ground ="./background/1.jpg";
 
-    connect(this,&ChessShow::signal_First,     this, &ChessShow::slot_First  );
-    connect(this,&ChessShow::signal_Second,    this, &ChessShow::slot_Second);
-    connect(this,&ChessShow::signal_GetChess,  this, &ChessShow::slot_GetChess);
-    connect(this,&ChessShow::signal_PerTimeOut,this, &ChessShow::slot_PerTimeOut);
-    connect(this,&ChessShow::signal_PerLeft,   this, &ChessShow::slot_PerLeft);
-    connect(this,&ChessShow::signal_PerWon,    this, &ChessShow::slot_PerWon );
-    connect(this,&ChessShow::signal_StopGame,  this, &ChessShow::slot_GameOver);
+    connect(this,&ChessShow::signal_First,          this, &ChessShow::slot_First  );
+    connect(this,&ChessShow::signal_Second,         this, &ChessShow::slot_Second);
+    connect(this,&ChessShow::signal_GetChess,       this, &ChessShow::slot_GetChess);
+    connect(this,&ChessShow::signal_PerTimeOut,     this, &ChessShow::slot_PerTimeOut);
+    connect(this,&ChessShow::signal_PerLeft,        this, &ChessShow::slot_PerLeft);
+    connect(this,&ChessShow::signal_PerWon,         this, &ChessShow::slot_PerWon );
+    connect(this,&ChessShow::signal_StopGame,       this, &ChessShow::slot_GameOver);
 
+    connect(this,&ChessShow::signal_PeerRequestUndo, this,&ChessShow::slot_PeerRequestUndo);
+    connect(this,&ChessShow::signal_PeerDisagreeUndo,this,&ChessShow::slot_PeerDisagreeUndo);
+    connect(this,&ChessShow::signal_PeerAgreeUndo,   this,&ChessShow::slot_PeerAgreeUndo);
+    connect(this,&ChessShow::signal_RefuseFindHomeFail,this,&ChessShow::slot_RefuseFindHomeFail);
+    connect(this,&ChessShow::signal_RefuseFindHomeSuccess,this,&ChessShow::slot_RefuseFindHomeSuccess);
     connect(&m_window,&TalkWindow::sendInfo,   [=](QString info)
     {
-        //if(m_game_type==NetWar)
+        if(m_game_type==NetWar)
         {
             netgame.sendTalkingInfo(info);
         }
@@ -386,8 +392,15 @@ void ChessShow::on_pushButton_3_clicked()
 void ChessShow::on_pushButton_findteam_clicked()
 {
     //查找失败  那就..
-    netgame.gameOver();
-    netgame.findTeam();
+    //netgame.gameOver();
+    if(netgame.findTeam()>0)
+    {
+        QMessageBox::information(nullptr,"已发送寻找队伍信令","success");
+    }
+    else
+    {
+        QMessageBox::information(nullptr,"您已经发送寻找队伍信息","fail");
+    }
 }
 
 void ChessShow::setNetWork(shared_ptr<SockClient> cli)
@@ -401,6 +414,8 @@ void ChessShow::on_pushButton_6_clicked()
     ui->widget_NetWar->hide();
 }
 
+
+
 void ChessShow::on_pushButton_7_clicked()
 {
     if(m_game_type==TwoPeopleWar)
@@ -411,8 +426,66 @@ void ChessShow::on_pushButton_7_clicked()
     {
         aigame.regretGame();
     }
+    else if(m_game_type==NetWar)
+    {
+        int ret=netgame.sendUndo();
+
+        if(ret==1)
+        {
+            //暂时将时间停止
+            justStopTime();
+        }
+        else if(ret==-1)
+        {
+            QMessageBox::information(nullptr,"当前不是你落子",
+                                     "只有等轮到你落子的时候你才能下棋");
+        }
+        else if(ret==0)
+        {
+
+            QMessageBox::information(nullptr,"你已经发送给对端悔棋信息",
+                                     "请等待服务端或者对端的反馈");
+        }
+        else if(ret==2)
+        {
+            QMessageBox::information(nullptr,"你应该多落子几步再悔棋",
+                                     "请等待服务端或者对端的反馈");
+        }
+    }
     //网络对战　悔棋也能添加
     update();
+}
+
+void ChessShow::slot_PeerRequestUndo()
+{
+    int ret=QMessageBox::information(NULL,
+                                     "对端请求悔棋",  "您是否同意",
+                                     QMessageBox::Yes | QMessageBox::No);
+    if(ret== QMessageBox::Yes )
+    {
+        netgame.undo();
+        netgame.sendUndoAgree();
+        update();
+    }
+    else if(ret==QMessageBox::No)
+    {
+        netgame.sendUndoDisAgree();
+    }
+}
+
+void ChessShow::slot_PeerAgreeUndo()
+{
+    QMessageBox::information(nullptr,"对端同意悔棋","lucky");
+    netgame.undo();
+    startTimeOut();
+    update();
+}
+
+void ChessShow::slot_PeerDisagreeUndo()
+{
+    QMessageBox::information(nullptr,"对端不同意悔棋","error");
+    netgame.disUndo();
+    justStartTime();
 }
 
 void ChessShow::on_pushButton_8_clicked()
@@ -451,6 +524,7 @@ void ChessShow::on_pushButton_5_clicked()
     QJsonDocument document;
     document.setObject(json);
     QByteArray bytearray = document.toJson(QJsonDocument::Compact);
+    m_cli->writeQString(bytearray);
 }
 
 //超时
@@ -470,6 +544,17 @@ void ChessShow::on_pushButton_SelfWon_clicked()
     netgame.WonSelf();
 }
 
+void ChessShow::slot_RefuseFindHomeSuccess()
+{
+    QMessageBox::information(nullptr,"拒绝寻找房间成功","success");
+    netgame.m_send_find_home=false;
+}
+
+void ChessShow::slot_RefuseFindHomeFail()
+{
+    QMessageBox::information(nullptr,"拒绝寻找房间失败","fail");
+}
+
 void ChessShow::stopTimeOut()
 {
     m_time_out=60;
@@ -480,6 +565,16 @@ void ChessShow::startTimeOut()
 {
     m_time_out=60;
     m_timestart=true;
+}
+
+void ChessShow::justStartTime()
+{
+    m_timestart=true;
+}
+
+void ChessShow::justStopTime()
+{
+    m_timestart=false;
 }
 
 void ChessShow::timerEvent(QTimerEvent *)
