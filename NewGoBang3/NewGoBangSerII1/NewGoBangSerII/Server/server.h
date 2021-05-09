@@ -1,6 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
-#include"head.h"
+#include"../Socket/head.h"
 
 using namespace std;
 
@@ -9,6 +9,7 @@ struct Point
     int x=-1;
     int y=-1;
 };
+
 //客户端给服务端发送的数据信息的头部;
 class SendPackImpl
 {
@@ -22,12 +23,12 @@ public:
         JoinTalkHome
     };
 
-
     SendPackImpl()
     {
         m_send_type=-1;
         m_info_len=-1;
     }
+
     SendPackImpl(int type)
     {
         m_send_type=type;

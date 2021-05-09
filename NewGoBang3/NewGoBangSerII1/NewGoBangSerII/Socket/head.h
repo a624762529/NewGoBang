@@ -36,7 +36,7 @@
 #include<string>
 
 
-#include<signal.h>
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -46,6 +46,9 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <sys/epoll.h>
+#include <memory>
+
+#include<signal.h>
 
 #include<memory>
 #include<exception>

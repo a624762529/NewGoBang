@@ -2,104 +2,123 @@
 
 HeartAlarm::HeartAlarm()
 {
-    int ret=pipe(fd);
-    if(ret==-1)
-    {
-        perror("pipe open error");
-    }
-    m_start=false;
-    m_sleep_alarm=999;
-}
-
-HeartAlarm::HeartAlarm(int alarm)
-{
-    m_sleep_alarm=alarm;
-    int ret=pipe(fd);
-    if(ret==-1)
-    {
-        perror("pipe open error");
-    }
-    m_start=false;
-
-}
-
-void HeartAlarm::PushNode(HeartNode node)
-{
-    if((*node.m_inslot)==0)
-    {
-        m_alarmSlot[0].push_back(node);
-        return;
-    }
-}
-
-vector<int> HeartAlarm::move()
-{
-    //获取尾部全部通讯文件描述符
-    vector<int> vec;
-    for(vector<HeartNode>::iterator it=m_alarmSlot[3].begin();
-        it!=m_alarmSlot[3].end();it++)
-    {
-        if((*it->m_inslot)==0)
-        {
-            vec.push_back((*it).m_fd);
-        }
-        else
-        {
-            (*it->m_inslot)=0;
-            m_alarmSlot[0].push_back(*it);
-        }
-    }
-    //移动
-    for(int i=3;i>0;i--)
-    {
-        swap(m_alarmSlot[i],m_alarmSlot[i-1]);
-    }
-    m_alarmSlot[0].clear();
-
-    return vec;
+    m_canuse=false;
 }
 
 void HeartAlarm::startAlarm()
 {
-    if(!m_start)
+//    if(m_canuse)
+//    {
+//        cout<<"开始心跳循环"<<endl;
+//    }
+    while(m_canuse)
     {
-         m_start=true;
-        thread th(&HeartAlarm::writeFd,this);
-        th.detach();
-
-    }
-}
-
-void HeartAlarm::writeFd()
-{
-    signal(SIGPIPE,SIG_IGN);
-    char ch='a';
-    while (m_start)
-    {
-        sleep(m_sleep_alarm);
-        int ret=write(fd[1],&ch,1);
+        int ret=write(m_pipe[1],"a",1);
         if(ret==-1)
         {
-            if(errno==EAGAIN)
-            {
-                continue;
-            }
-            else
-            {
-                perror("error:");
-                throw bad_alloc();
-            }
+            perror("pipe wirte error");
         }
+        sleep(m_peralarm);
+    }
+
+}
+
+void HeartAlarm::initAlarm(int time)
+{
+    //创建pipe
+    if(pipe(m_pipe) == -1)
+    {
+        fprintf(stderr,"Can't create the pipe!");
+        exit(2);
+    }
+    m_peralarm=time;
+    m_canuse=true;
+}
+
+
+void HeartAlarm::addNode(TcpCommunication *com)
+{
+    if(com==nullptr)
+    {
+        return;
+    }
+
+    //如果节点在心跳队列上  那就自加相应的arg
+    if(com->m_in_heart_que==true)
+    {
+        com->m_tag++;
+        //cout<<"com__tag  value:"<<com->m_tag<<endl;
+        return;
+    }
+
+    //不在心跳队列上 那就讲通讯对象加上
+    com->m_tag=0;
+    com->m_in_heart_que=true;
+    m_vec[0].push_back(com);
+}
+
+vector<TcpCommunication *> HeartAlarm::timeout_Act
+            (map<TcpCommunication*,bool>& mp)
+{
+    char buf[102]{0};
+    int ret=read(m_pipe[0],buf,102);
+    if(ret==-1)
+    {
+        perror("pipe read error");
+    }
+    vector<TcpCommunication *> vec=m_vec[3];
+    m_vec[3].clear();
+    moveVec();
+    for(vector<TcpCommunication *>::iterator it=vec.begin();it!=vec.end();)
+    {
+        if(mp.find(*it)==mp.end())
+        {
+            vec.erase(it);
+            continue;
+        }
+
+        if((*it)->m_tag==0)
+        {
+              it++;
+        }
+        else
+        {
+            m_vec[0].push_back(*it);
+            (*it)->m_tag=0;
+            vec.erase(it);
+        }
+
+    }
+    return vec;    //反馈回去要清除的内容
+}
+
+void HeartAlarm::moveVec()
+{
+    for(int i=3;i>0;i--)
+    {
+        swap(m_vec[i],m_vec[i-1]);
     }
 }
 
-//获取读文件描述符
-int HeartAlarm::getReadFd()
+void HeartAlarm::start()
 {
-    return fd[0];
+    thread th(&HeartAlarm::startAlarm,this);
+    th.detach();
 }
 
-void HeartAlarm::setAlarm(int per_al)
+HeartAlarm::~HeartAlarm()
 {
-    m_sleep_alarm=per_al;
+    m_canuse=false;
+    close(m_pipe[0]);
+    close(m_pipe[1]);
+}
+
+int HeartAlarm::getReadFd()
+{
+    return m_pipe[0];
+}
+
+int HeartAlarm::getWriteFd()
+{
+    return m_pipe[1];
 }
